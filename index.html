@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Сайт задач и финансов</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+      color: #333;
+    }
+    header {
+      background-color: #1e3a8a;
+      color: white;
+      padding: 20px 10px;
+      text-align: center;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      background-color: #2563eb;
+    }
+    nav button {
+      flex: 1;
+      padding: 14px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    nav button:hover {
+      background-color: #1e40af;
+    }
+    main {
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 {
+      color: #1e3a8a;
+      font-size: 1.2rem;
+      margin-top: 20px;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 12px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+    button.add-btn {
+      padding: 12px 16px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+    li {
+      background-color: #f1f5f9;
+      margin-bottom: 10px;
+      padding: 12px;
+      border-left: 5px solid #2563eb;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    li.completed {
+      background-color: #e0f2fe;
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+    .delete-btn {
+      background-color: #ef4444;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .hidden { display: none; }
+    .finance-item { margin-bottom: 15px; }
+    .goal {
+      background-color: #eef2ff;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .goal label { display: block; margin-bottom: 5px; font-weight: 500; }
+    .progress {
+      height: 8px;
+      background-color: #cbd5e1;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #2563eb;
+      width: 0%;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Управление задачами и финансами</h1>
+  </header>
+
+  <nav>
+    <button onclick="showPage('tasks')">Задачи</button>
+    <button onclick="showPage('finance')">Финансы и план</button>
+  </nav>
+
+  <main>
+    <!-- Задачи -->
+    <section id="tasksSection">
+      <input type="text" id="taskInput" placeholder="Введите задачу...">
+      <button class="add-btn" onclick="addTask()">Добавить задачу</button>
+      <h2>Ваши задачи:</h2>
+      <ul id="taskList"></ul>
+    </section>
+
+    <!-- Финансы -->
+    <section id="financeSection" class="hidden">
+      <div class="finance-item">
+        <label>Доход (ежемесячно):</label>
+        <input type="number" id="income" placeholder="Введите доход">
+      </div>
+      <div class="finance-item">
+        <label>Планируемые ежемесячные расходы:</label>
+        <input type="number" id="monthlyExpenses" placeholder="Сумма">
+      </div>
+      <div class="finance-item">
+        <label>Планируемые ежедневные расходы:</label>
+        <input type="number" id="dailyExpenses" placeholder="Сумма">
+      </div>
+
+      <h2>Финансовые цели</h2>
+
+      <div class="goal">
+        <label>Цель: Закрытие кредита 77,000 ₽</label>
+        <input type="number" id="goal1Input" placeholder="Сколько отложили?" oninput="updateGoal('goal1', 77000)">
+        <div class="progress"><div class="progress-bar" id="goal1Bar"></div></div>
+      </div>
+
+      <div class="goal">
+        <label>Цель: Закрытие кредита 180,000 ₽</label>
+        <input type="number" id="goal2Input" placeholder="Сколько отложили?" oninput="updateGoal('goal2', 180000)">
+        <div class="progress"><div class="progress-bar" id="goal2Bar"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let tasks = [];
+
+    window.onload = () => {
+      const stored = localStorage.getItem('tasks');
+      if (stored) {
+        tasks = JSON.parse(stored);
+        tasks.forEach(t => renderTask(t.text, t.completed));
+      }
+
+      document.getElementById('income').value = localStorage.getItem('income') || '';
+      document.getElementById('monthlyExpenses').value = localStorage.getItem('monthlyExpenses') || '';
+      document.getElementById('dailyExpenses').value = localStorage.getItem('dailyExpenses') || '';
+
+      document.getElementById('goal1Input').value = localStorage.getItem('goal1') || '';
+      document.getElementById('goal2Input').value = localStorage.getItem('goal2') || '';
+
+      updateGoal('goal1', 77000);
+      updateGoal('goal2', 180000);
+    };
+
+    function updateGoal(id, total) {
+      const val = parseFloat(document.getElementById(id + 'Input').value) || 0;
+      const percent = Math.min((val / total) * 100, 100);
+      document.getElementById(id + 'Bar').style.width = percent + '%';
+      localStorage.setItem(id, val);
+    }
+
+    function saveTasks() {
+      const listItems = document.querySelectorAll('#taskList li');
+      tasks = [];
+      listItems.forEach(item => {
+        tasks.push({
+          text: item.firstChild.textContent.trim(),
+          completed: item.classList.contains('completed')
+        });
+      });
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function addTask() {
+      const input = document.getElementById('taskInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      renderTask(text, false);
+      saveTasks();
+      input.value = '';
+    }
+
+    function renderTask(text, completed) {
+      const li = document.createElement('li');
+      if (completed) li.classList.add('completed');
+
+      const taskText = document.createTextNode(text);
+      li.appendChild(taskText);
+
+      li.onclick = () => {
+        li.classList.toggle('completed');
+        saveTasks();
+      };
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = 'Удалить';
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        li.remove();
+        saveTasks();
+      };
+
+      li.appendChild(delBtn);
+      document.getElementById('taskList').appendChild(li);
+    }
+
+    function showPage(section) {
+      document.getElementById('tasksSection').classList.toggle('hidden', section !== 'tasks');
+      document.getElementById('financeSection').classList.toggle('hidden', section !== 'finance');
+    }
+
+    document.getElementById('income').oninput = () => {
+      localStorage.setItem('income', document.getElementById('income').value);
+    };
+    document.getElementById('monthlyExpenses').oninput = () => {
+      localStorage.setItem('monthlyExpenses', document.getElementById('monthlyExpenses').value);
+    };
+    document.getElementById('dailyExpenses').oninput = () => {
+      localStorage.setItem('dailyExpenses', document.getElementById('dailyExpenses').value);
+    };
+  </script>
+
+</body>
+</html>
